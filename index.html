@@ -1,0 +1,1388 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NexaAI | AI Phone Agent Implementation</title>
+  <meta name="description" content="NexaAI builds and launches AI phone agents for your business. Bilingual EN/ES. Packages, FAQ, and demo booking."/>
+  <style>
+    :root{
+      --bg: #070A12;
+      --panel: rgba(255,255,255,0.06);
+      --panel2: rgba(255,255,255,0.09);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --muted2: rgba(255,255,255,0.55);
+      --border: rgba(255,255,255,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.45);
+      --radius: 22px;
+
+      --a: #6EE7FF;
+      --b: #A78BFA;
+      --c: #34D399;
+      --warn: #FBBF24;
+
+      --max: 1120px;
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 15% 10%, rgba(167,139,250,0.30), transparent 55%),
+                  radial-gradient(900px 700px at 90% 30%, rgba(110,231,255,0.22), transparent 55%),
+                  radial-gradient(800px 600px at 70% 95%, rgba(52,211,153,0.16), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      overflow-x:hidden;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    .wrap{ width:100%; display:flex; justify-content:center; }
+    .container{ width:min(var(--max), 92vw); }
+
+    /* Top bar */
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to bottom, rgba(7,10,18,0.78), rgba(7,10,18,0.35));
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .topbar-inner{
+      padding:14px 0;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      user-select:none;
+    }
+    .logo{
+      width:34px; height:34px; border-radius:12px;
+      background:
+        radial-gradient(12px 12px at 30% 30%, rgba(110,231,255,0.95), transparent 70%),
+        radial-gradient(14px 14px at 70% 40%, rgba(167,139,250,0.95), transparent 70%),
+        radial-gradient(16px 16px at 50% 75%, rgba(52,211,153,0.9), transparent 70%),
+        rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.30);
+    }
+    .brand-title{ font-weight:800; letter-spacing:0.2px; }
+    .brand-sub{ font-size:12px; color: var(--muted2); margin-top:2px; }
+
+    .nav{
+      display:flex; align-items:center; gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .nav a{
+      padding:10px 12px;
+      border-radius:12px;
+      color:var(--muted);
+      border:1px solid transparent;
+    }
+    .nav a:hover{
+      background:rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.10);
+      color:var(--text);
+    }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      cursor:pointer;
+      user-select:none;
+      transition: transform .15s ease, background .15s ease;
+    }
+    .pill:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.085); }
+    .pill small{ color: var(--muted2); }
+
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      cursor:pointer;
+      font-weight:700;
+      letter-spacing:0.1px;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.18);}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(110,231,255,0.22), rgba(167,139,250,0.22));
+      border-color: rgba(110,231,255,0.28);
+      box-shadow: 0 18px 50px rgba(110,231,255,0.06), 0 18px 50px rgba(167,139,250,0.06);
+    }
+    .btn.primary:hover{
+      background: linear-gradient(135deg, rgba(110,231,255,0.30), rgba(167,139,250,0.30));
+    }
+
+    /* Hero */
+    .hero{ padding: 54px 0 26px; }
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 18px;
+      align-items:stretch;
+    }
+    @media (max-width: 920px){
+      .hero-grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .hero-left{ padding: 24px 22px; overflow:hidden; position:relative; }
+    .hero-left:before{
+      content:"";
+      position:absolute; inset:-1px;
+      background: radial-gradient(600px 260px at 10% 15%, rgba(110,231,255,0.16), transparent 60%),
+                  radial-gradient(520px 260px at 70% 5%, rgba(167,139,250,0.18), transparent 60%),
+                  radial-gradient(560px 320px at 30% 110%, rgba(52,211,153,0.12), transparent 60%);
+      pointer-events:none;
+      border-radius: var(--radius);
+    }
+    .hero-left > *{ position:relative; }
+
+    .badge{
+      display:inline-flex; align-items:center; gap:10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-size: 13px;
+      width: fit-content;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.9), rgba(110,231,255,0.9));
+      box-shadow: 0 0 18px rgba(110,231,255,0.25);
+    }
+
+    h1{
+      margin: 14px 0 10px;
+      font-size: clamp(28px, 3.3vw, 44px);
+      line-height: 1.08;
+      letter-spacing: -0.6px;
+    }
+    .lead{
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+      max-width: 62ch;
+    }
+    .hero-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 16px;
+    }
+    .mini{
+      margin-top: 14px;
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
+      color: var(--muted2);
+      font-size: 13px;
+    }
+    .mini .tag{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* Trust callouts */
+    .trustline{
+      margin-top: 14px;
+      padding: 12px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.18);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .trustline b{ color: var(--text); }
+
+    /* Hero right - interactive demo */
+    .hero-right{ padding: 16px; }
+    .demo{
+      padding: 16px;
+      border-radius: calc(var(--radius) - 6px);
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+    .demo h3{
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: var(--text);
+      letter-spacing:0.2px;
+    }
+    .demo p{ margin:0 0 12px; color: var(--muted); font-size: 13px; line-height:1.45; }
+
+    .chat{
+      height: 280px;
+      overflow:auto;
+      border-radius: 16px;
+      padding: 12px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.20);
+    }
+    .msg{
+      display:flex;
+      margin: 10px 0;
+      gap: 10px;
+      align-items:flex-start;
+      animation: pop .22s ease both;
+    }
+    @keyframes pop{
+      from{ transform: translateY(6px); opacity:0; }
+      to{ transform: translateY(0); opacity:1; }
+    }
+    .avatar{
+      width:30px; height:30px; border-radius: 12px;
+      background: rgba(255,255,255,0.07);
+      border:1px solid rgba(255,255,255,0.12);
+      flex: 0 0 auto;
+      display:flex; align-items:center; justify-content:center;
+      font-size: 14px;
+    }
+    .bubble{
+      border-radius: 16px;
+      padding: 10px 12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      max-width: 85%;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .msg.user{ flex-direction: row-reverse; }
+    .msg.user .bubble{
+      background: rgba(110,231,255,0.10);
+      border-color: rgba(110,231,255,0.18);
+    }
+    .msg.user .avatar{
+      background: rgba(110,231,255,0.10);
+      border-color: rgba(110,231,255,0.16);
+    }
+
+    .promptbar{
+      margin-top: 10px;
+      display:flex; gap:8px;
+    }
+    .promptbar input{
+      flex:1;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      outline:none;
+    }
+    .promptbar input::placeholder{ color: rgba(255,255,255,0.40); }
+
+    /* Sections */
+    section{ padding: 34px 0; }
+    .section-title{
+      font-size: 22px;
+      margin: 0 0 8px;
+      letter-spacing:-0.2px;
+    }
+    .section-sub{
+      margin:0 0 18px;
+      color: var(--muted);
+      line-height:1.5;
+      max-width: 78ch;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 960px){ .grid-3{ grid-template-columns: 1fr; } }
+
+    .feature{
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+    }
+    .feature h4{ margin: 4px 0 8px; }
+    .feature p{ margin:0; color: var(--muted); line-height:1.55; font-size: 14px;}
+    .icon{
+      width:40px; height:40px;
+      border-radius: 16px;
+      display:flex; align-items:center; justify-content:center;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      font-size: 18px;
+    }
+
+    /* Steps */
+    .steps{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+    @media (max-width: 960px){ .steps{ grid-template-columns: 1fr; } }
+
+    .panel{ padding: 18px; }
+    .list{
+      margin:0; padding:0; list-style:none;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .li{
+      display:flex; gap:10px; align-items:flex-start;
+      padding: 12px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+    .num{
+      width:26px; height:26px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(167,139,250,0.16);
+      border:1px solid rgba(167,139,250,0.22);
+      color: var(--text);
+      font-weight:800;
+      flex: 0 0 auto;
+      font-size: 13px;
+    }
+    .li b{ display:block; margin-bottom:4px; }
+    .li span{ color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+    /* Pricing */
+    .pricing{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+    @media (max-width: 1020px){ .pricing{ grid-template-columns: 1fr; } }
+
+    .price-card{
+      padding: 18px;
+      border-radius: var(--radius);
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      position:relative;
+      overflow:hidden;
+    }
+    .price-card.featured{
+      border-color: rgba(110,231,255,0.22);
+      background: linear-gradient(135deg, rgba(110,231,255,0.10), rgba(167,139,250,0.10));
+      box-shadow: 0 18px 60px rgba(110,231,255,0.05), 0 18px 60px rgba(167,139,250,0.05);
+    }
+    .ribbon{
+      position:absolute; top:14px; right:14px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.07);
+      color: var(--text);
+    }
+    .plan{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    .plan h3{ margin:0; font-size: 18px; }
+    .plan p{ margin:4px 0 0; color: var(--muted); font-size: 13px; line-height:1.4; }
+    .price{
+      margin: 12px 0 12px;
+      font-size: 30px;
+      font-weight: 860;
+      letter-spacing: -0.4px;
+    }
+    .price small{ font-size: 13px; color: var(--muted); font-weight: 650; }
+    .ul{
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height:1.6;
+      font-size: 14px;
+    }
+    .ul li{ margin: 6px 0; }
+    .price-actions{ margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap; }
+
+    /* Disclaimer box */
+    .disclaimer{
+      margin-top: 16px;
+      padding: 14px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.18);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .disclaimer b{ color: var(--text); }
+
+    /* FAQ accordion */
+    .faq{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 960px){ .faq{ grid-template-columns: 1fr; } }
+
+    details{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      border-radius: var(--radius);
+      padding: 14px 14px;
+    }
+    summary{
+      cursor:pointer;
+      font-weight: 760;
+      outline:none;
+      list-style:none;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    details p{
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height:1.55;
+      font-size: 14px;
+    }
+
+    /* Course teaser */
+    .course{
+      padding: 18px;
+      border-radius: var(--radius);
+      border:1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(135deg, rgba(52,211,153,0.10), rgba(110,231,255,0.08));
+      position:relative;
+      overflow:hidden;
+    }
+    .course h3{ margin:0 0 6px; }
+    .course p{ margin:0 0 12px; color: var(--muted); line-height:1.55; }
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+    .chip{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* Footer CTA */
+    .cta{
+      padding: 22px;
+      border-radius: var(--radius);
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap: 14px;
+      flex-wrap:wrap;
+    }
+    .cta h3{ margin:0; }
+    .cta p{ margin: 6px 0 0; color: var(--muted); max-width: 78ch; }
+    footer{
+      padding: 26px 0 44px;
+      color: var(--muted2);
+      font-size: 13px;
+    }
+
+    /* Reveal animation on scroll */
+    .reveal{ opacity:0; transform: translateY(12px); transition: opacity .45s ease, transform .45s ease; }
+    .reveal.show{ opacity:1; transform: translateY(0); }
+
+    .hide-sm{ display:inline-flex; }
+    @media (max-width: 560px){ .hide-sm{ display:none; } }
+  </style>
+</head>
+
+<body>
+  <!-- TOPBAR -->
+  <div class="wrap topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="brand-title">NexaAI</div>
+          <div class="brand-sub" data-i18n="brandSub">AI Phone Agents • Implementation • Launch</div>
+        </div>
+      </div>
+
+      <div class="nav">
+        <a href="#how" class="hide-sm" data-i18n="navHow">How it works</a>
+        <a href="#pricing" class="hide-sm" data-i18n="navPricing">Pricing</a>
+        <a href="#faq" class="hide-sm" data-i18n="navFaq">FAQ</a>
+
+        <button class="pill" id="langToggle" title="Toggle language">
+          <span id="langFlag">🇺🇸</span>
+          <span id="langText">EN</span>
+          <small> / ES</small>
+        </button>
+
+        <!-- Demo buttons -->
+        <a class="btn" id="callBtn" href="#" aria-label="Call NexaAI">
+          📞 <span data-i18n="callCta">Call</span>
+        </a>
+        <a class="btn primary" id="bookBtn" href="#" target="_blank" rel="noopener">
+          🗓️ <span data-i18n="bookCta">Book demo</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="wrap">
+    <div class="container hero">
+      <div class="hero-grid">
+        <div class="card hero-left reveal">
+          <div class="badge">
+            <span class="dot"></span>
+            <span data-i18n="heroBadge">24/7 calls, leads & appointments</span>
+          </div>
+
+          <h1 data-i18n="heroTitle">
+            AI Phone Agent for your business. NexaAI implements it. You run it.
+          </h1>
+
+          <p class="lead" data-i18n="heroLead">
+            Stop missing calls. Automate FAQs, capture leads, and schedule appointments.
+            You pay upfront for implementation. Software usage is paid separately based on your call volume.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn primary" href="#pricing" data-i18n="heroBtnPrimary">See packages</a>
+            <a class="btn" href="#how" data-i18n="heroBtnSecondary">How it works</a>
+            <button class="btn" id="copyPitchBtn" type="button" data-i18n="heroBtnCopy">Copy pitch</button>
+          </div>
+
+          <div class="mini">
+            <span class="tag">⚡ <span data-i18n="mini1">Launch in days</span></span>
+            <span class="tag">🧩 <span data-i18n="mini2">Calendar/CRM integrations</span></span>
+            <span class="tag">🧪 <span data-i18n="mini3">Testing + guardrails</span></span>
+          </div>
+
+          <div class="trustline">
+            <b data-i18n="trustBold">Trusted process:</b>
+            <span data-i18n="trustText">
+              After payment you receive an email with setup steps, the recommended platform link, and a kickoff booking link. Clear scope, clear handoff.
+            </span>
+          </div>
+
+          <div class="disclaimer">
+            <b data-i18n="discBold">Important:</b>
+            <span data-i18n="discText">
+              Implementation is a one-time service fee. Software/usage (minutes/calls) is billed separately by the provider and depends on your volume.
+            </span>
+          </div>
+
+          <div class="hero-actions" style="margin-top:14px;">
+            <a class="btn" id="callBtn2" href="#">📞 <span data-i18n="callNow">Call for a demo</span></a>
+            <a class="btn primary" id="bookBtn2" href="#" target="_blank" rel="noopener">🗓️ <span data-i18n="bookNow">Book a demo</span></a>
+          </div>
+
+          <div class="mini" style="margin-top:10px;">
+            <span class="tag">☎️ <span id="phoneDisplay">+1 (___) ___-____</span></span>
+          </div>
+        </div>
+
+        <div class="card hero-right reveal">
+          <div class="demo">
+            <h3 data-i18n="demoTitle">Interactive preview (sample)</h3>
+            <p data-i18n="demoSub">Type a question like “What are your hours?” or “I want to book an appointment”.</p>
+
+            <div class="chat" id="chat" aria-label="chat preview"></div>
+
+            <div class="promptbar">
+              <input id="chatInput" type="text" placeholder="Type here..." />
+              <button class="btn primary" id="sendBtn" type="button" data-i18n="demoSend">Send</button>
+            </div>
+
+            <div class="mini" style="margin-top:10px;">
+              <span class="tag">📞 <span data-i18n="demoTag1">Calls</span></span>
+              <span class="tag">🗓️ <span data-i18n="demoTag2">Appointments</span></span>
+              <span class="tag">🧾 <span data-i18n="demoTag3">Lead capture</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FEATURES -->
+      <section class="reveal" id="features">
+        <h2 class="section-title" data-i18n="featTitle">What you get</h2>
+        <p class="section-sub" data-i18n="featSub">
+          NexaAI builds your AI phone agent around your real business rules so it sounds natural and stays on track.
+        </p>
+
+        <div class="grid-3">
+          <div class="feature">
+            <div class="icon">🎙️</div>
+            <h4 data-i18n="f1t">Natural conversations</h4>
+            <p data-i18n="f1d">Tone, scripts, and guardrails tailored to your brand. No robotic answers.</p>
+          </div>
+          <div class="feature">
+            <div class="icon">🧩</div>
+            <h4 data-i18n="f2t">Integrations</h4>
+            <p data-i18n="f2d">Connect calendar, CRM, forms, spreadsheets, email, or automation tools (Zapier/Make).</p>
+          </div>
+          <div class="feature">
+            <div class="icon">🧪</div>
+            <h4 data-i18n="f3t">Testing & launch</h4>
+            <p data-i18n="f3d">We test edge cases, refine responses, and go live with a smooth handoff.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRUST -->
+      <section class="reveal" id="trust">
+        <h2 class="section-title" data-i18n="trustTitle">Built to feel trustworthy</h2>
+        <p class="section-sub" data-i18n="trustSub">
+          Transparent scope, clear deliverables, and a simple process. You keep control of software costs because usage is billed separately.
+        </p>
+
+        <div class="grid-3">
+          <div class="feature">
+            <div class="icon">✅</div>
+            <h4 data-i18n="t1t">Clear scope</h4>
+            <p data-i18n="t1d">One-time implementation fee. Software usage is paid separately based on call volume.</p>
+          </div>
+          <div class="feature">
+            <div class="icon">🔒</div>
+            <h4 data-i18n="t2t">Professional handoff</h4>
+            <p data-i18n="t2d">Documentation + short training so your team can run it confidently.</p>
+          </div>
+          <div class="feature">
+            <div class="icon">⚙️</div>
+            <h4 data-i18n="t3t">Real integrations</h4>
+            <p data-i18n="t3d">Calls become bookings and leads, not lost messages.</p>
+          </div>
+        </div>
+
+        <div class="cta" style="margin-top:14px;">
+          <div>
+            <h3 data-i18n="trustCtaTitle">Want to see it live?</h3>
+            <p data-i18n="trustCtaSub">Call us or book a demo. We’ll show a working flow and how it captures leads & appointments.</p>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn" id="callBtn3" href="#">📞 <span data-i18n="callNow2">Call now</span></a>
+            <a class="btn primary" id="bookBtn3" href="#" target="_blank" rel="noopener">🗓️ <span data-i18n="bookNow2">Book demo</span></a>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS -->
+      <section class="reveal" id="how">
+        <h2 class="section-title" data-i18n="howTitle">How it works</h2>
+        <p class="section-sub" data-i18n="howSub">
+          Pay once for implementation. After payment, you receive an email with the platform link and next steps. Then we build, test, and launch.
+        </p>
+
+        <div class="steps">
+          <div class="card panel">
+            <ul class="list">
+              <li class="li">
+                <div class="num">1</div>
+                <div>
+                  <b data-i18n="s1t">Purchase a package</b>
+                  <span data-i18n="s1d">One-time payment for implementation, integration, testing, and launch.</span>
+                </div>
+              </li>
+              <li class="li">
+                <div class="num">2</div>
+                <div>
+                  <b data-i18n="s2t">Receive setup email</b>
+                  <span data-i18n="s2d">We send instructions, checklist, and the recommended platform link (after payment).</span>
+                </div>
+              </li>
+              <li class="li">
+                <div class="num">3</div>
+                <div>
+                  <b data-i18n="s3t">Kickoff + build</b>
+                  <span data-i18n="s3d">We map your call flow, write scripts, and configure guardrails.</span>
+                </div>
+              </li>
+              <li class="li">
+                <div class="num">4</div>
+                <div>
+                  <b data-i18n="s4t">Integrate + test</b>
+                  <span data-i18n="s4d">Calendar/CRM/Sheets/email, QA edge cases, and refine responses.</span>
+                </div>
+              </li>
+              <li class="li">
+                <div class="num">5</div>
+                <div>
+                  <b data-i18n="s5t">Go live</b>
+                  <span data-i18n="s5d">Launch your agent and optimize with a post-launch adjustment window.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card panel">
+            <h3 style="margin:0 0 10px;" data-i18n="needTitle">What we need from you</h3>
+            <p style="margin:0 0 12px; color: var(--muted); line-height:1.55;" data-i18n="needSub">
+              Simple inputs so the agent matches your business.
+            </p>
+            <ul class="ul">
+              <li data-i18n="need1">Business hours + service area</li>
+              <li data-i18n="need2">Services + pricing range (if available)</li>
+              <li data-i18n="need3">Top FAQs + “what NOT to say” rules</li>
+              <li data-i18n="need4">How you book today (calendar/CRM)</li>
+              <li data-i18n="need5">Preferred tone (friendly / professional)</li>
+            </ul>
+
+            <div class="disclaimer" style="margin-top:14px;">
+              <b data-i18n="costBold">Costs:</b>
+              <span data-i18n="costText">
+                Software usage is billed separately by the provider. You control costs based on call volume.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRICING -->
+      <section class="reveal" id="pricing">
+        <h2 class="section-title" data-i18n="pricingTitle">Packages</h2>
+        <p class="section-sub" data-i18n="pricingSub">
+          Choose a one-time implementation package. Software usage (minutes/calls) is paid separately based on your volume.
+        </p>
+
+        <div class="pricing">
+          <div class="price-card">
+            <div class="plan">
+              <div>
+                <h3 data-i18n="p1Name">Launch</h3>
+                <p data-i18n="p1Desc">Start fast with a clean lead-capture flow.</p>
+              </div>
+            </div>
+            <div class="price">$799 <small data-i18n="oneTime">one-time</small></div>
+            <ul class="ul">
+              <li data-i18n="p1a">1 agent, 1 language</li>
+              <li data-i18n="p1b">1 main flow (lead capture + transfer or booking)</li>
+              <li data-i18n="p1c">Leads to email + spreadsheet</li>
+              <li data-i18n="p1d">1 post-launch adjustment</li>
+              <li data-i18n="p1e">Typical timeline: 2–4 days</li>
+            </ul>
+            <div class="price-actions">
+              <a class="btn primary" href="#contact" data-i18n="chooseBtn">Choose</a>
+              <a class="btn" href="#faq" data-i18n="askBtn">Questions</a>
+            </div>
+          </div>
+
+          <div class="price-card featured">
+            <div class="ribbon" data-i18n="mostPopular">Most popular</div>
+            <div class="plan">
+              <div>
+                <h3 data-i18n="p2Name">Automation</h3>
+                <p data-i18n="p2Desc">More flows + calendar/CRM integration.</p>
+              </div>
+            </div>
+            <div class="price">$1,997 <small data-i18n="oneTime">one-time</small></div>
+            <ul class="ul">
+              <li data-i18n="p2a">1–2 agents (roles or languages)</li>
+              <li data-i18n="p2b">2–3 flows (sales/support/follow-up)</li>
+              <li data-i18n="p2c">Calendar booking integration</li>
+              <li data-i18n="p2d">CRM/automation (Zapier/Make webhook)</li>
+              <li data-i18n="p2e">2 adjustment rounds</li>
+              <li data-i18n="p2f">Typical timeline: 5–7 days</li>
+            </ul>
+            <div class="price-actions">
+              <a class="btn primary" href="#contact" data-i18n="chooseBtn">Choose</a>
+              <a class="btn" id="bookBtnPricing" href="#" target="_blank" rel="noopener" data-i18n="bookBtnPricing">Book demo</a>
+            </div>
+          </div>
+
+          <div class="price-card">
+            <div class="plan">
+              <div>
+                <h3 data-i18n="p3Name">Scale</h3>
+                <p data-i18n="p3Desc">Advanced flows, QA, and multi-integrations.</p>
+              </div>
+            </div>
+            <div class="price" data-i18n="p3Price">$4,500+ <small>estimate</small></div>
+            <ul class="ul">
+              <li data-i18n="p3a">2–4 agents</li>
+              <li data-i18n="p3b">Advanced routing, callbacks, escalations</li>
+              <li data-i18n="p3c">Multiple integrations (CRM + calendar + tickets)</li>
+              <li data-i18n="p3d">Full QA + calibration</li>
+              <li data-i18n="p3e">Documentation + team training</li>
+              <li data-i18n="p3f">Typical timeline: 10–14 days</li>
+            </ul>
+            <div class="price-actions">
+              <a class="btn primary" href="#contact" data-i18n="talkBtn">Talk to us</a>
+              <a class="btn" id="bookBtnScale" href="#" target="_blank" rel="noopener" data-i18n="bookNow2">Book demo</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="disclaimer">
+          <b data-i18n="checkoutBold">Checkout clarity:</b>
+          <span data-i18n="checkoutText">
+            Your payment covers NexaAI implementation & integration services. Software usage and any third-party tools are paid separately to their providers.
+          </span>
+        </div>
+      </section>
+
+      <!-- COURSE TEASER -->
+      <section class="reveal" id="course">
+        <div class="course">
+          <h2 class="section-title" style="margin:0 0 8px;" data-i18n="courseTitle">Coming soon: DIY Course</h2>
+          <p data-i18n="courseSub">
+            Want to build your own AI agent later? We’re preparing a step-by-step course: flows, prompts, integrations, testing, and launch.
+          </p>
+          <div class="chips">
+            <span class="chip" data-i18n="course1">Conversation flow design</span>
+            <span class="chip" data-i18n="course2">Prompt & guardrails</span>
+            <span class="chip" data-i18n="course3">Calendar/CRM integration</span>
+            <span class="chip" data-i18n="course4">QA + optimization</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section class="reveal" id="faq">
+        <h2 class="section-title" data-i18n="faqTitle">FAQ</h2>
+        <p class="section-sub" data-i18n="faqSub">
+          Fast answers, clear expectations.
+        </p>
+
+        <div class="faq">
+          <details>
+            <summary data-i18n="q1">Do you include the software cost?</summary>
+            <p data-i18n="a1">No. Your payment covers implementation only. Software usage (minutes/calls) is paid separately based on your volume.</p>
+          </details>
+          <details>
+            <summary data-i18n="q2">Why don’t you name the platform on the website?</summary>
+            <p data-i18n="a2">We share the recommended platform and setup link after purchase to keep the process clean and prevent confusion. The outcome matters: calls, leads, and bookings.</p>
+          </details>
+          <details>
+            <summary data-i18n="q3">How fast can we go live?</summary>
+            <p data-i18n="a3">Launch: 2–4 days. Automation: 5–7 days. Scale: 10–14 days (depending on integrations and approvals).</p>
+          </details>
+          <details>
+            <summary data-i18n="q4">What do you need from me?</summary>
+            <p data-i18n="a4">Hours, services, FAQs, business rules, and your booking method (calendar/CRM). We provide a checklist after payment.</p>
+          </details>
+          <details>
+            <summary data-i18n="q5">Do you offer monthly support?</summary>
+            <p data-i18n="a5">Yes, optional. Many clients choose monthly optimization for improving flows, testing, and adding new scenarios.</p>
+          </details>
+          <details>
+            <summary data-i18n="q6">Will the agent sound robotic?</summary>
+            <p data-i18n="a6">We design the tone, scripts, and guardrails to match your brand. Then we test and refine with real scenarios.</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- CONTACT / CTA -->
+      <section class="reveal" id="contact">
+        <div class="cta">
+          <div>
+            <h3 data-i18n="ctaTitle">Ready to see a demo?</h3>
+            <p data-i18n="ctaSub">
+              Call NexaAI or book a time on our calendar. We’ll show a working flow and answer questions.
+            </p>
+            <p style="margin:8px 0 0; color: var(--muted2); font-size:13px;">
+              <span data-i18n="ctaPhoneLabel">Phone:</span> <b id="phoneDisplay2">+1 (___) ___-____</b>
+            </p>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn" id="callBtn4" href="#">📞 <span data-i18n="callNow2">Call now</span></a>
+            <a class="btn primary" id="bookBtn4" href="#" target="_blank" rel="noopener">🗓️ <span data-i18n="bookNow2">Book demo</span></a>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <div style="display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+          <div>© <span id="year"></span> NexaAI</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="#pricing" data-i18n="navPricing">Pricing</a>
+            <a href="#faq" data-i18n="navFaq">FAQ</a>
+            <a href="#contact" data-i18n="navContact">Contact</a>
+          </div>
+        </div>
+        <div style="margin-top:10px; color: var(--muted2);">
+          <span data-i18n="footerNote">
+            Implementation services only. Software usage billed separately by providers. Terms can be clarified in your post-payment onboarding email.
+          </span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // ===========================
+    // NexaAI CONFIG (EDIT THESE!)
+    // ===========================
+    const CONFIG = {
+      phoneDisplay: "+1 (___) ___-____",    // shown on page
+      phoneDial: "+1__________",            // for tel: link (digits), ex: +14045551234
+      calDemoUrl: "https://cal.com/yourname/demo",     // your cal.com demo link
+      // optional (for after purchase email flow)
+      calKickoffUrl: "https://cal.com/yourname/kickoff"
+    };
+
+    // Fill phone displays
+    document.getElementById("phoneDisplay").textContent = CONFIG.phoneDisplay;
+    document.getElementById("phoneDisplay2").textContent = CONFIG.phoneDisplay;
+
+    // Wire call buttons
+    const callIds = ["callBtn","callBtn2","callBtn3","callBtn4"];
+    callIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.href = `tel:${CONFIG.phoneDial}`;
+    });
+
+    // Wire booking buttons
+    const bookIds = ["bookBtn","bookBtn2","bookBtn3","bookBtn4","bookBtnPricing","bookBtnScale"];
+    bookIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.href = CONFIG.calDemoUrl;
+    });
+
+    // Year
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Reveal on scroll
+    const revealEls = document.querySelectorAll(".reveal");
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add("show");
+      });
+    }, { threshold: 0.12 });
+    revealEls.forEach(el => io.observe(el));
+
+    // ===========================
+    // Bilingual content (EN/ES)
+    // ===========================
+    const i18n = {
+      en: {
+        brandSub: "AI Phone Agents • Implementation • Launch",
+        navHow: "How it works",
+        navPricing: "Pricing",
+        navFaq: "FAQ",
+        navContact: "Contact",
+        callCta: "Call",
+        bookCta: "Book demo",
+
+        heroBadge: "24/7 calls, leads & appointments",
+        heroTitle: "AI Phone Agent for your business. NexaAI implements it. You run it.",
+        heroLead: "Stop missing calls. Automate FAQs, capture leads, and schedule appointments. You pay upfront for implementation. Software usage is paid separately based on your call volume.",
+        heroBtnPrimary: "See packages",
+        heroBtnSecondary: "How it works",
+        heroBtnCopy: "Copy pitch",
+        mini1: "Launch in days",
+        mini2: "Calendar/CRM integrations",
+        mini3: "Testing + guardrails",
+        trustBold: "Trusted process:",
+        trustText: "After payment you receive an email with setup steps, the recommended platform link, and a kickoff booking link. Clear scope, clear handoff.",
+        discBold: "Important:",
+        discText: "Implementation is a one-time service fee. Software/usage (minutes/calls) is billed separately by the provider and depends on your volume.",
+        callNow: "Call for a demo",
+        bookNow: "Book a demo",
+
+        demoTitle: "Interactive preview (sample)",
+        demoSub: "Type a question like “What are your hours?” or “I want to book an appointment”.",
+        demoSend: "Send",
+        demoTag1: "Calls",
+        demoTag2: "Appointments",
+        demoTag3: "Lead capture",
+
+        featTitle: "What you get",
+        featSub: "NexaAI builds your AI phone agent around your real business rules so it sounds natural and stays on track.",
+        f1t: "Natural conversations",
+        f1d: "Tone, scripts, and guardrails tailored to your brand. No robotic answers.",
+        f2t: "Integrations",
+        f2d: "Connect calendar, CRM, forms, spreadsheets, email, or automation tools (Zapier/Make).",
+        f3t: "Testing & launch",
+        f3d: "We test edge cases, refine responses, and go live with a smooth handoff.",
+
+        trustTitle: "Built to feel trustworthy",
+        trustSub: "Transparent scope, clear deliverables, and a simple process. You keep control of software costs because usage is billed separately.",
+        t1t: "Clear scope",
+        t1d: "One-time implementation fee. Software usage is paid separately based on call volume.",
+        t2t: "Professional handoff",
+        t2d: "Documentation + short training so your team can run it confidently.",
+        t3t: "Real integrations",
+        t3d: "Calls become bookings and leads, not lost messages.",
+        trustCtaTitle: "Want to see it live?",
+        trustCtaSub: "Call us or book a demo. We’ll show a working flow and how it captures leads & appointments.",
+        callNow2: "Call now",
+        bookNow2: "Book demo",
+
+        howTitle: "How it works",
+        howSub: "Pay once for implementation. After payment, you receive an email with the platform link and next steps. Then we build, test, and launch.",
+        s1t: "Purchase a package",
+        s1d: "One-time payment for implementation, integration, testing, and launch.",
+        s2t: "Receive setup email",
+        s2d: "We send instructions, checklist, and the recommended platform link (after payment).",
+        s3t: "Kickoff + build",
+        s3d: "We map your call flow, write scripts, and configure guardrails.",
+        s4t: "Integrate + test",
+        s4d: "Calendar/CRM/Sheets/email, QA edge cases, and refine responses.",
+        s5t: "Go live",
+        s5d: "Launch your agent and optimize with a post-launch adjustment window.",
+        needTitle: "What we need from you",
+        needSub: "Simple inputs so the agent matches your business.",
+        need1: "Business hours + service area",
+        need2: "Services + pricing range (if available)",
+        need3: "Top FAQs + “what NOT to say” rules",
+        need4: "How you book today (calendar/CRM)",
+        need5: "Preferred tone (friendly / professional)",
+        costBold: "Costs:",
+        costText: "Software usage is billed separately by the provider. You control costs based on call volume.",
+
+        pricingTitle: "Packages",
+        pricingSub: "Choose a one-time implementation package. Software usage (minutes/calls) is paid separately based on your volume.",
+        oneTime: "one-time",
+        mostPopular: "Most popular",
+        chooseBtn: "Choose",
+        askBtn: "Questions",
+        talkBtn: "Talk to us",
+        bookBtnPricing: "Book demo",
+
+        p1Name: "Launch",
+        p1Desc: "Start fast with a clean lead-capture flow.",
+        p1a: "1 agent, 1 language",
+        p1b: "1 main flow (lead capture + transfer or booking)",
+        p1c: "Leads to email + spreadsheet",
+        p1d: "1 post-launch adjustment",
+        p1e: "Typical timeline: 2–4 days",
+
+        p2Name: "Automation",
+        p2Desc: "More flows + calendar/CRM integration.",
+        p2a: "1–2 agents (roles or languages)",
+        p2b: "2–3 flows (sales/support/follow-up)",
+        p2c: "Calendar booking integration",
+        p2d: "CRM/automation (Zapier/Make webhook)",
+        p2e: "2 adjustment rounds",
+        p2f: "Typical timeline: 5–7 days",
+
+        p3Name: "Scale",
+        p3Desc: "Advanced flows, QA, and multi-integrations.",
+        p3Price: "$4,500+ <small>estimate</small>",
+        p3a: "2–4 agents",
+        p3b: "Advanced routing, callbacks, escalations",
+        p3c: "Multiple integrations (CRM + calendar + tickets)",
+        p3d: "Full QA + calibration",
+        p3e: "Documentation + team training",
+        p3f: "Typical timeline: 10–14 days",
+
+        checkoutBold: "Checkout clarity:",
+        checkoutText: "Your payment covers NexaAI implementation & integration services. Software usage and any third-party tools are paid separately to their providers.",
+
+        courseTitle: "Coming soon: DIY Course",
+        courseSub: "Want to build your own AI agent later? We’re preparing a step-by-step course: flows, prompts, integrations, testing, and launch.",
+        course1: "Conversation flow design",
+        course2: "Prompt & guardrails",
+        course3: "Calendar/CRM integration",
+        course4: "QA + optimization",
+
+        faqTitle: "FAQ",
+        faqSub: "Fast answers, clear expectations.",
+        q1: "Do you include the software cost?",
+        a1: "No. Your payment covers implementation only. Software usage (minutes/calls) is paid separately based on your volume.",
+        q2: "Why don’t you name the platform on the website?",
+        a2: "We share the recommended platform and setup link after purchase to keep the process clean and prevent confusion. The outcome matters: calls, leads, and bookings.",
+        q3: "How fast can we go live?",
+        a3: "Launch: 2–4 days. Automation: 5–7 days. Scale: 10–14 days (depending on integrations and approvals).",
+        q4: "What do you need from me?",
+        a4: "Hours, services, FAQs, business rules, and your booking method (calendar/CRM). We provide a checklist after payment.",
+        q5: "Do you offer monthly support?",
+        a5: "Yes, optional. Many clients choose monthly optimization for improving flows, testing, and adding new scenarios.",
+        q6: "Will the agent sound robotic?",
+        a6: "We design the tone, scripts, and guardrails to match your brand. Then we test and refine with real scenarios.",
+
+        ctaTitle: "Ready to see a demo?",
+        ctaSub: "Call NexaAI or book a time on our calendar. We’ll show a working flow and answer questions.",
+        ctaPhoneLabel: "Phone:",
+        footerNote: "Implementation services only. Software usage billed separately by providers. Terms can be clarified in your post-payment onboarding email."
+      },
+
+      es: {
+        brandSub: "Agentes IA Telefónicos • Implementación • Lanzamiento",
+        navHow: "Cómo funciona",
+        navPricing: "Precios",
+        navFaq: "Preguntas",
+        navContact: "Contacto",
+        callCta: "Llamar",
+        bookCta: "Agendar demo",
+
+        heroBadge: "Llamadas, leads y citas 24/7",
+        heroTitle: "Agente IA telefónico para tu negocio. NexaAI lo implementa. Tú lo usas.",
+        heroLead: "Deja de perder llamadas. Automatiza preguntas, captura leads y agenda citas. Pagas la implementación por adelantado. El consumo del software se paga aparte según tu volumen de llamadas.",
+        heroBtnPrimary: "Ver paquetes",
+        heroBtnSecondary: "Cómo funciona",
+        heroBtnCopy: "Copiar pitch",
+        mini1: "Listo en días",
+        mini2: "Integraciones calendario/CRM",
+        mini3: "Pruebas + guardrails",
+        trustBold: "Proceso confiable:",
+        trustText: "Después del pago recibes un email con pasos, checklist, el link de la plataforma recomendada y un link para agendar kickoff. Alcance claro, entrega clara.",
+        discBold: "Importante:",
+        discText: "La implementación es un pago único por servicio. El consumo del software (minutos/llamadas) se cobra aparte por el proveedor y depende del volumen.",
+        callNow: "Llama para una demo",
+        bookNow: "Agenda una demo",
+
+        demoTitle: "Vista previa interactiva (ejemplo)",
+        demoSub: "Escribe algo como “¿Cuál es el horario?” o “Quiero agendar una cita”.",
+        demoSend: "Enviar",
+        demoTag1: "Llamadas",
+        demoTag2: "Citas",
+        demoTag3: "Captura de leads",
+
+        featTitle: "Qué recibes",
+        featSub: "NexaAI construye tu agente IA con reglas reales de tu negocio para que suene natural y se mantenga en el tema.",
+        f1t: "Conversaciones naturales",
+        f1d: "Tono, guiones y guardrails alineados a tu marca. Sin respuestas robóticas.",
+        f2t: "Integraciones",
+        f2d: "Conecta calendario, CRM, formularios, hojas, email o automatización (Zapier/Make).",
+        f3t: "Pruebas y lanzamiento",
+        f3d: "Probamos casos difíciles, ajustamos respuestas y lanzamos con handoff claro.",
+
+        trustTitle: "Hecho para verse confiable",
+        trustSub: "Alcance transparente, entregables claros y un proceso simple. Mantienes control de costos porque el consumo se cobra aparte.",
+        t1t: "Alcance claro",
+        t1d: "Pago único por implementación. El consumo del software se paga aparte según el volumen.",
+        t2t: "Entrega profesional",
+        t2d: "Documentación + mini entrenamiento para que tu equipo lo use con confianza.",
+        t3t: "Integraciones reales",
+        t3d: "Las llamadas se convierten en citas y leads, no en notas perdidas.",
+        trustCtaTitle: "¿Quieres verlo en vivo?",
+        trustCtaSub: "Llámanos o agenda una demo. Te mostramos un flujo real y cómo captura leads y citas.",
+        callNow2: "Llamar ahora",
+        bookNow2: "Agendar demo",
+
+        howTitle: "Cómo funciona",
+        howSub: "Pagas una sola vez la implementación. Después del pago recibes un email con el link de la plataforma y los pasos. Luego construimos, probamos y lanzamos.",
+        s1t: "Compra un paquete",
+        s1d: "Pago único por implementación, integración, pruebas y lanzamiento.",
+        s2t: "Recibe el email de setup",
+        s2d: "Enviamos instrucciones, checklist y el link de la plataforma recomendada (después del pago).",
+        s3t: "Kickoff + construcción",
+        s3d: "Definimos el flujo, guiones y guardrails.",
+        s4t: "Integración + pruebas",
+        s4d: "Calendario/CRM/Sheets/email, QA de casos difíciles y ajustes.",
+        s5t: "Lanzamiento",
+        s5d: "Ponemos el agente en vivo y optimizamos con ventana de ajustes.",
+        needTitle: "Qué necesitamos de ti",
+        needSub: "Información simple para que el agente sea fiel a tu negocio.",
+        need1: "Horarios + zona de servicio",
+        need2: "Servicios + rango de precios (si tienes)",
+        need3: "Preguntas frecuentes + reglas de “qué NO decir”",
+        need4: "Cómo agendas hoy (calendario/CRM)",
+        need5: "Tono (amigable / profesional)",
+        costBold: "Costos:",
+        costText: "El consumo del software se cobra aparte por el proveedor. Controlas costos según el volumen.",
+
+        pricingTitle: "Paquetes",
+        pricingSub: "Elige un paquete de implementación (pago único). El consumo (minutos/llamadas) se paga aparte según tu volumen.",
+        oneTime: "pago único",
+        mostPopular: "Más popular",
+        chooseBtn: "Elegir",
+        askBtn: "Preguntar",
+        talkBtn: "Hablar con NexaAI",
+        bookBtnPricing: "Agendar demo",
+
+        p1Name: "Launch",
+        p1Desc: "Arranque rápido con captura de leads.",
+        p1a: "1 agente, 1 idioma",
+        p1b: "1 flujo principal (captura + transferir o agendar)",
+        p1c: "Leads a email + hoja",
+        p1d: "1 ajuste post-lanzamiento",
+        p1e: "Tiempo típico: 2–4 días",
+
+        p2Name: "Automation",
+        p2Desc: "Más flujos + integración calendario/CRM.",
+        p2a: "1–2 agentes (roles o idiomas)",
+        p2b: "2–3 flujos (ventas/soporte/seguimiento)",
+        p2c: "Integración para agendar citas",
+        p2d: "CRM/automatización (Webhook Zapier/Make)",
+        p2e: "2 rondas de ajustes",
+        p2f: "Tiempo típico: 5–7 días",
+
+        p3Name: "Scale",
+        p3Desc: "Flujos avanzados, QA y múltiples integraciones.",
+        p3Price: "$4,500+ <small>estimado</small>",
+        p3a: "2–4 agentes",
+        p3b: "Ruteo, callbacks y escalaciones",
+        p3c: "Varias integraciones (CRM + calendario + tickets)",
+        p3d: "QA completo + calibración",
+        p3e: "Documentación + entrenamiento",
+        p3f: "Tiempo típico: 10–14 días",
+
+        checkoutBold: "Claridad en el pago:",
+        checkoutText: "Tu pago cubre los servicios de implementación e integración de NexaAI. El consumo del software y herramientas externas se pagan aparte a sus proveedores.",
+
+        courseTitle: "Próximamente: Curso DIY",
+        courseSub: "¿Luego quieres hacerlo tú? Estamos preparando un curso paso a paso: flujos, prompts, integraciones, pruebas y lanzamiento.",
+        course1: "Diseño de flujo",
+        course2: "Prompt y guardrails",
+        course3: "Integración calendario/CRM",
+        course4: "QA y optimización",
+
+        faqTitle: "Preguntas frecuentes",
+        faqSub: "Respuestas rápidas y expectativas claras.",
+        q1: "¿Incluye el costo del software?",
+        a1: "No. Tu pago es solo por implementación. El consumo (minutos/llamadas) se paga aparte según el volumen.",
+        q2: "¿Por qué no mencionas la plataforma en la web?",
+        a2: "Compartimos la plataforma recomendada y el link de setup después del pago para evitar confusión. Lo importante es el resultado: llamadas, leads y citas.",
+        q3: "¿En cuánto tiempo sale en vivo?",
+        a3: "Launch: 2–4 días. Automation: 5–7 días. Scale: 10–14 días (según integraciones y aprobaciones).",
+        q4: "¿Qué necesitas de mí?",
+        a4: "Horarios, servicios, FAQs, reglas y tu método de agendar (calendario/CRM). Enviamos checklist después del pago.",
+        q5: "¿Tienes soporte mensual?",
+        a5: "Sí, opcional. Muchos eligen optimización mensual para mejorar flujos y agregar escenarios.",
+        q6: "¿Va a sonar robótico?",
+        a6: "Definimos tono, guiones y guardrails para tu marca. Luego probamos y ajustamos con escenarios reales.",
+
+        ctaTitle: "¿Listo para ver una demo?",
+        ctaSub: "Llama a NexaAI o agenda en el calendario. Te mostramos un flujo funcionando y aclaramos dudas.",
+        ctaPhoneLabel: "Teléfono:",
+        footerNote: "Solo servicios de implementación. El consumo del software se cobra aparte por los proveedores. Los términos se aclaran en el email de onboarding post-pago."
+      }
+    };
+
+    function setLang(lang){
+      document.documentElement.lang = lang;
+      document.getElementById("langFlag").textContent = (lang === "en") ? "🇺🇸" : "🇪🇸";
+      document.getElementById("langText").textContent = (lang === "en") ? "EN" : "ES";
+      document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key = el.getAttribute("data-i18n");
+        if (i18n[lang][key] !== undefined) el.innerHTML = i18n[lang][key];
+      });
+
+      // placeholder for chat input
+      const chatInput = document.getElementById("chatInput");
+      chatInput.placeholder = (lang === "en") ? "Type here..." : "Escribe aquí...";
+    }
+
+    let currentLang = "en";
+    document.getElementById("langToggle").addEventListener("click", ()=>{
+      currentLang = (currentLang === "en") ? "es" : "en";
+      setLang(currentLang);
+      seedChat(); // refresh sample chat in selected language
+    });
+
+    // Copy pitch
+    document.getElementById("copyPitchBtn").addEventListener("click", async ()=>{
+      const pitch = (currentLang === "en")
+        ? "NexaAI sets up an AI phone agent for your business: answers FAQs, captures leads, and books appointments 24/7. You pay a one-time implementation fee; software usage is billed separately based on your call volume."
+        : "NexaAI implementa un agente IA telefónico para tu negocio: responde FAQs, captura leads y agenda citas 24/7. Pagas una sola vez la implementación; el consumo del software se cobra aparte según el volumen.";
+      try{
+        await navigator.clipboard.writeText(pitch);
+        alert(currentLang === "en" ? "Pitch copied ✅" : "Pitch copiado ✅");
+      }catch(e){
+        alert(currentLang === "en" ? "Copy failed. Select text manually." : "No se pudo copiar. Copia manualmente.");
+      }
+    });
+
+    // Interactive demo (simple rules)
+    const chatEl = document.getElementById("chat");
+    function addMsg(who, text){
+      const row = document.createElement("div");
+      row.className = "msg " + (who === "user" ? "user" : "bot");
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = (who === "user") ? "🧑" : "🤖";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+      row.appendChild(avatar);
+      row.appendChild(bubble);
+      chatEl.appendChild(row);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function botReply(input){
+      const t = input.toLowerCase();
+      if (currentLang === "es") {
+        if (t.includes("horario") || t.includes("abren") || t.includes("cierran")) return "Podemos responder horarios, zona de servicio y precios aproximados. ¿Qué servicio necesitas?";
+        if (t.includes("cita") || t.includes("agendar") || t.includes("reserv")) return "Claro. Puedo ayudarte a agendar. ¿Qué día te conviene y cuál es tu nombre y teléfono?";
+        if (t.includes("precio") || t.includes("cuánto") || t.includes("cost")) return "Podemos dar rangos o cotización inicial. Para una cotización exacta, tomo tu información y un técnico te llama.";
+        if (t.includes("hablar") || t.includes("humano") || t.includes("persona")) return "Entendido. Te transfiero con un asesor o puedo tomar un mensaje y te devuelven la llamada.";
+        return "Perfecto. Puedo ayudarte con información, capturar tus datos y agendar. ¿Cuál es el motivo de tu llamada?";
+      } else {
+        if (t.includes("hours") || t.includes("open") || t.includes("close")) return "We can answer hours, service area, and basic pricing ranges. What service do you need?";
+        if (t.includes("appointment") || t.includes("book") || t.includes("schedule")) return "Sure. I can help you book an appointment. What day works best, and what’s your name & phone?";
+        if (t.includes("price") || t.includes("cost") || t.includes("how much")) return "We can give ranges or an initial estimate. For exact quotes, I’ll capture your info and a specialist will call you.";
+        if (t.includes("human") || t.includes("agent") || t.includes("person")) return "Got it. I can transfer you, or take a message and request a callback.";
+        return "Great. I can answer questions, capture your details, and schedule. What are you calling about?";
+      }
+    }
+
+    function seedChat(){
+      chatEl.innerHTML = "";
+      if (currentLang === "es"){
+        addMsg("bot","Hola 👋 Soy el asistente IA. ¿Quieres agendar una cita o hacer una pregunta rápida?");
+        addMsg("user","Quiero agendar una cita.");
+        addMsg("bot","Claro. ¿Qué día te conviene y cuál es tu nombre y teléfono?");
+      } else {
+        addMsg("bot","Hi 👋 I’m the AI assistant. Do you want to book an appointment or ask a quick question?");
+        addMsg("user","I want to book an appointment.");
+        addMsg("bot","Sure. What day works best, and what’s your name & phone?");
+      }
+    }
+
+    seedChat();
+
+    document.getElementById("sendBtn").addEventListener("click", ()=>{
+      const input = document.getElementById("chatInput");
+      const val = input.value.trim();
+      if (!val) return;
+      addMsg("user", val);
+      input.value = "";
+      setTimeout(()=> addMsg("bot", botReply(val)), 180);
+    });
+
+    document.getElementById("chatInput").addEventListener("keydown", (e)=>{
+      if (e.key === "Enter") document.getElementById("sendBtn").click();
+    });
+
+    // Language default (you can change to 'es' if you want)
+    setLang("en");
+
+    // Reveal on scroll
+    const revealEls = document.querySelectorAll(".reveal");
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("show"); });
+    }, { threshold: 0.12 });
+    revealEls.forEach(el => io.observe(el));
+
+    // ===========================
+    // Hosting wiring + buttons
+    // ===========================
+    const callIds = ["callBtn","callBtn2","callBtn3","callBtn4"];
+    callIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.href = `tel:${CONFIG.phoneDial}`;
+    });
+
+    const bookIds = ["bookBtn","bookBtn2","bookBtn3","bookBtn4","bookBtnPricing","bookBtnScale"];
+    bookIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.href = CONFIG.calDemoUrl;
+    });
+
+    document.getElementById("phoneDisplay").textContent = CONFIG.phoneDisplay;
+    document.getElementById("phoneDisplay2").textContent = CONFIG.phoneDisplay;
+  </script>
+</body>
+</html>
