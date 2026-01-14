@@ -512,6 +512,49 @@
   </style>
 </head>
 
+  <script>
+  // --- Toggle EN/ES (force working) ---
+  (function () {
+    const btn = document.getElementById("langToggle");
+    if (!btn) return;
+
+    // Default lang
+    let currentLang = localStorage.getItem("nexaai_lang") || "en";
+
+    function applyLang(lang){
+      document.documentElement.lang = lang;
+
+      const langFlag = document.getElementById("langFlag");
+      const langText = document.getElementById("langText");
+      if (langFlag) langFlag.textContent = (lang === "en") ? "🇺🇸" : "🇪🇸";
+      if (langText) langText.textContent = (lang === "en") ? "EN" : "ES";
+
+      // Translate all nodes with data-i18n
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (window.i18n && window.i18n[lang] && window.i18n[lang][key] !== undefined) {
+          el.innerHTML = window.i18n[lang][key];
+        }
+      });
+
+      const chatInput = document.getElementById("chatInput");
+      if (chatInput) chatInput.placeholder = (lang === "en") ? "Type here..." : "Escribe aquí...";
+
+      localStorage.setItem("nexaai_lang", lang);
+    }
+
+    // Expose i18n if it exists in your page script
+    // If your i18n object is currently "const i18n = {...}" inside another script,
+    // make it global by adding: window.i18n = i18n; after it's declared.
+    applyLang(currentLang);
+
+    btn.addEventListener("click", () => {
+      currentLang = (currentLang === "en") ? "es" : "en";
+      applyLang(currentLang);
+    });
+  })();
+</script>
+
 <body>
   <!-- TOPBAR -->
   <div class="wrap topbar">
