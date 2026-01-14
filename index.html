@@ -833,7 +833,7 @@
       // translate elements that exist in mini dictionary
       document.querySelectorAll("[data-i18n]").forEach(el => {
         const key = el.getAttribute("data-i18n");
-        const val = i18nMini?.[lang]?.[key];
+        const val = i18n?.[lang]?.[key];
         if (val !== undefined) el.innerHTML = val;
       });
 
@@ -908,7 +908,17 @@
       if (!val) return;
       addMsg("user", val);
       input.value = "";
-      setTimeout(()=> addMsg("bot", botReply(val)), 150);
+      // typing indicator
+const typingText = (currentLang === "es") ? "Escribiendo..." : "Typing...";
+addMsg("bot", typingText);
+const typingNode = chatEl.lastElementChild;
+
+const delay = 1200 + Math.floor(Math.random() * 1000); // 1.2s–2.2s
+setTimeout(() => {
+  // remove typing
+  if (typingNode && typingNode.parentNode) typingNode.parentNode.removeChild(typingNode);
+  addMsg("bot", botReply(val));
+}, delay);
     }
 
     if ($("sendBtn")) $("sendBtn").addEventListener("click", handleSend);
